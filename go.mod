@@ -1,4 +1,4 @@
-module goTunnel
+module github.com/navpreet032/goTunnel
 
 go 1.24
 

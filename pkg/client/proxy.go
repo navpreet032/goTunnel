@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"goTunnel/pkg/protocol"
+	"github.com/navpreet032/goTunnel/pkg/protocol"
 )
 
 // ForwardToLocal forwards an HTTP request to localhost and returns the response.

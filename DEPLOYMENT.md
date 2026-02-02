@@ -9,7 +9,7 @@
 cd /Users/admin/Desktop/goTunnel
 
 # Create a new repository on GitHub, then:
-git remote add origin https://github.com/YOUR_USERNAME/goTunnel.git
+git remote add origin https://github.com/navpreet032/goTunnel.git
 git branch -M main
 git push -u origin main
 ```
@@ -24,7 +24,7 @@ export PATH=$PATH:/usr/local/go/bin
 echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
 
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/goTunnel.git
+git clone https://github.com/navpreet032/goTunnel.git
 cd goTunnel
 
 # Build the server
@@ -116,6 +116,7 @@ Make sure port 8080 is open on your EC2 security group:
 ## Troubleshooting
 
 ### Server not accessible
+
 ```bash
 # Check if server is running
 ps aux | grep server
@@ -128,6 +129,7 @@ sudo ufw status
 ```
 
 ### WebSocket connection fails
+
 - Ensure you're using `ws://` (not `wss://` for now)
 - Verify EC2 security group allows inbound on port 8080
 - Check server logs for errors
@@ -135,6 +137,7 @@ sudo ufw status
 ## Using with HTTPS (Future Phase)
 
 For production with HTTPS:
+
 1. Set up a domain name pointing to your EC2 IP
 2. Install SSL certificate (Let's Encrypt)
 3. Use reverse proxy (nginx) or update server to support TLS

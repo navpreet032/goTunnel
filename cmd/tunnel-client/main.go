@@ -11,8 +11,8 @@ import (
 	"syscall"
 	"time"
 
-	"goTunnel/pkg/client"
-	"goTunnel/pkg/protocol"
+	"github.com/navpreet032/goTunnel/pkg/client"
+	"github.com/navpreet032/goTunnel/pkg/protocol"
 
 	"github.com/gorilla/websocket"
 )

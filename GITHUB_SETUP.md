@@ -7,7 +7,7 @@
 ✅ `README.md` with full documentation  
 ✅ Start scripts for server and client  
 ✅ `DEPLOYMENT.md` with EC2 setup guide  
-✅ All code committed to git  
+✅ All code committed to git
 
 ## Next Steps for GitHub
 
@@ -21,7 +21,7 @@ Go to https://github.com/new and create a new repository named `goTunnel`
 cd /Users/admin/Desktop/goTunnel
 
 # Add your GitHub repository as remote
-git remote add origin https://github.com/YOUR_USERNAME/goTunnel.git
+git remote add origin https://github.com/navpreet032/goTunnel.git
 
 # Push to GitHub
 git branch -M main
@@ -32,7 +32,7 @@ git push -u origin main
 
 ```bash
 # SSH into your EC2 server, then:
-git clone https://github.com/YOUR_USERNAME/goTunnel.git
+git clone https://github.com/navpreet032/goTunnel.git
 cd goTunnel
 go mod download
 ./scripts/start-server.sh 8080
@@ -41,6 +41,7 @@ go mod download
 ## Quick Start Scripts
 
 ### On Server (EC2)
+
 ```bash
 ./scripts/start-server.sh                    # Default port 8080
 ./scripts/start-server.sh 9090               # Custom port
@@ -48,6 +49,7 @@ go mod download
 ```
 
 ### On Local Machine
+
 ```bash
 # Start your local app first (e.g., on port 3000)
 npm run dev

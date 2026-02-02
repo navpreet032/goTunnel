@@ -8,9 +8,9 @@ import (
 	"math/rand"
 	"net/http"
 
-	"goTunnel/pkg/protocol"
-	"goTunnel/pkg/registry"
-	"goTunnel/pkg/server"
+	"github.com/navpreet032/goTunnel/pkg/protocol"
+	"github.com/navpreet032/goTunnel/pkg/registry"
+	"github.com/navpreet032/goTunnel/pkg/server"
 
 	"github.com/gorilla/websocket"
 )

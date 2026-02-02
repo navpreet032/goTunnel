@@ -86,12 +86,27 @@ GoTunnel creates a **bidirectional WebSocket tunnel** between your local machine
 
 ## 📦 Installation
 
+### Quick Install (Once Published)
+
+After publishing to GitHub, users can install with a single command:
+
+```bash
+# Install both server and client
+go install github.com/navpreet032/goTunnel/cmd/...@latest
+
+# Or install individually
+go install github.com/navpreet032/goTunnel/cmd/tunnel-server@latest
+go install github.com/navpreet032/goTunnel/cmd/tunnel-client@latest
+```
+
+> **Note:** Replace `navpreet032` with your GitHub username. See [DISTRIBUTION.md](DISTRIBUTION.md) for complete publishing guide.
+
 ### Prerequisites
 
 - **Go 1.21+** (for `log/slog` support)
-- A server with public IP (EC2, VPS, etc.)
+- A server with public IP (EC2, VPS, etc.) for running the tunnel-server
 
-### Build from Source
+### Build from Source (Current Development)
 
 ```bash
 # Clone repository
@@ -140,6 +155,7 @@ rails server # Ruby on Rails (port 3000)
 ```
 
 Output:
+
 ```
 [INFO] Connecting to tunnel server at wss://easysource-mortalengine.hirequotient.com/tunnel...
 [INFO] Connected successfully!
@@ -186,6 +202,7 @@ GoTunnel uses **path-based routing** for tunnel URLs:
 **Format:** `https://YOUR-DOMAIN/client-ID/path`
 
 **Examples:**
+
 ```bash
 # Production server
 https://easysource-mortalengine.hirequotient.com/client-abc123/
@@ -197,20 +214,22 @@ http://localhost:8080/client-abc123/api/users
 ```
 
 The server automatically:
+
 - Uses `https://` when `--domain` is set (production)
 - Uses `http://localhost:PORT` when no domain is set (local testing)
 - Appends the client ID as a path segment
 
 ### Server Options
 
-| CLI Flag | Env Variable | Default | Description |
-|----------|--------------|---------|-------------|
-| `--port` | `SERVER_PORT` | `8080` | Server listen port |
-| `--domain` | `TUNNEL_DOMAIN` | `` | Public server address for tunnel URLs (e.g., `tunnel.example.com` or `1.2.3.4:8080`) |
-| `--request-timeout` | `REQUEST_TIMEOUT` | `5` | Client response timeout (seconds) |
-| `--log-level` | `LOG_LEVEL` | `info` | Logging level (debug/info/warn/error) |
+| CLI Flag            | Env Variable      | Default | Description                                                                          |
+| ------------------- | ----------------- | ------- | ------------------------------------------------------------------------------------ |
+| `--port`            | `SERVER_PORT`     | `8080`  | Server listen port                                                                   |
+| `--domain`          | `TUNNEL_DOMAIN`   | ``      | Public server address for tunnel URLs (e.g., `tunnel.example.com` or `1.2.3.4:8080`) |
+| `--request-timeout` | `REQUEST_TIMEOUT` | `5`     | Client response timeout (seconds)                                                    |
+| `--log-level`       | `LOG_LEVEL`       | `info`  | Logging level (debug/info/warn/error)                                                |
 
 **Example:**
+
 ```bash
 # Local testing (no domain, uses localhost:8080 in URLs)
 ./tunnel-server --port 8080
@@ -230,14 +249,15 @@ export LOG_LEVEL=info
 
 ### Client Options
 
-| CLI Flag | Env Variable | Default | Description |
-|----------|--------------|---------|-------------|
-| `--server` | `TUNNEL_SERVER` | `wss://easysource-mortalengine.hirequotient.com/tunnel` | Server WebSocket URL |
-| `--local-port` | `LOCAL_PORT` | `3000` | Local port to forward to |
-| `--max-reconnect-delay` | `MAX_RECONNECT_DELAY` | `60` | Max reconnect delay (seconds) |
-| `--log-level` | `LOG_LEVEL` | `info` | Logging level (debug/info/warn/error) |
+| CLI Flag                | Env Variable          | Default                                                 | Description                           |
+| ----------------------- | --------------------- | ------------------------------------------------------- | ------------------------------------- |
+| `--server`              | `TUNNEL_SERVER`       | `wss://easysource-mortalengine.hirequotient.com/tunnel` | Server WebSocket URL                  |
+| `--local-port`          | `LOCAL_PORT`          | `3000`                                                  | Local port to forward to              |
+| `--max-reconnect-delay` | `MAX_RECONNECT_DELAY` | `60`                                                    | Max reconnect delay (seconds)         |
+| `--log-level`           | `LOG_LEVEL`           | `info`                                                  | Logging level (debug/info/warn/error) |
 
 **Example:**
+
 ```bash
 # Simplest - uses all defaults (production server, port 3000)
 ./tunnel-client
@@ -311,6 +331,7 @@ Run multiple clients for different local apps:
 ```
 
 Each gets a unique tunnel URL on the production server:
+
 - `https://easysource-mortalengine.hirequotient.com/client-abc123/` → localhost:3000 (React)
 - `https://easysource-mortalengine.hirequotient.com/client-def456/` → localhost:8000 (API)
 - `https://easysource-mortalengine.hirequotient.com/client-ghi789/` → localhost:5050 (DB UI)
@@ -320,6 +341,7 @@ Each gets a unique tunnel URL on the production server:
 Run behind nginx/caddy for SSL termination:
 
 **Nginx Configuration:**
+
 ```nginx
 upstream tunnel_backend {
     server localhost:8080;
@@ -355,6 +377,7 @@ server {
 ```
 
 Then connect clients with SSL:
+
 ```bash
 ./tunnel-client --server wss://tunnel.example.com/tunnel --local-port 3000
 ```
@@ -362,6 +385,7 @@ Then connect clients with SSL:
 ### Docker Deployment
 
 **Server Dockerfile:**
+
 ```dockerfile
 FROM golang:1.21-alpine AS builder
 WORKDIR /app
@@ -376,6 +400,7 @@ ENTRYPOINT ["tunnel-server"]
 ```
 
 **Run:**
+
 ```bash
 docker build -t gotunnel-server .
 docker run -d -p 8080:8080 \
@@ -389,11 +414,13 @@ docker run -d -p 8080:8080 \
 ### Client Can't Connect
 
 **Symptoms:**
+
 ```
 [ERROR] Connection failed: dial tcp: connection refused
 ```
 
 **Solutions:**
+
 1. Verify server is running: `ps aux | grep tunnel-server`
 2. Check firewall rules allow port 8080
 3. Verify WebSocket URL format: `ws://` not `http://`
@@ -402,11 +429,13 @@ docker run -d -p 8080:8080 \
 ### Request Timeout
 
 **Symptoms:**
+
 ```
 Gateway timeout: client did not respond in time
 ```
 
 **Solutions:**
+
 1. Check local app is running: `curl http://localhost:3000`
 2. Verify local port matches client config
 3. Increase timeout: `--request-timeout 10`
@@ -415,12 +444,14 @@ Gateway timeout: client did not respond in time
 ### Auto-Reconnect Issues
 
 **Symptoms:**
+
 ```
 [ERROR] Client disconnected: websocket: close 1006
 [WARN] Connection lost, attempting to reconnect...
 ```
 
 **This is normal!** The client will automatically reconnect with exponential backoff:
+
 - Attempt 1: Wait 1s → Retry
 - Attempt 2: Wait 2s → Retry
 - Attempt 3: Wait 4s → Retry
@@ -429,11 +460,13 @@ Gateway timeout: client did not respond in time
 ### 502 Bad Gateway
 
 **Symptoms:**
+
 ```
 Failed to forward request: dial tcp :3000: connect: connection refused
 ```
 
 **Solutions:**
+
 1. Start your local application
 2. Verify port number is correct
 3. Check local app is listening on all interfaces or localhost
@@ -443,6 +476,7 @@ Failed to forward request: dial tcp :3000: connect: connection refused
 This project is an excellent learning resource for Go developers:
 
 ### 1. Goroutines & Concurrency
+
 ```go
 // Handle each client in a separate goroutine
 go handleClient(conn)
@@ -459,6 +493,7 @@ for {
 ```
 
 ### 2. Channels for Communication
+
 ```go
 // Request/response matching across async boundaries
 respChan := make(chan *HTTPResponseData, 1)
@@ -473,6 +508,7 @@ case <-time.After(5 * time.Second):
 ```
 
 ### 3. Mutexes for Thread Safety
+
 ```go
 type Registry struct {
     mu      sync.RWMutex
@@ -487,6 +523,7 @@ func (r *Registry) Get(id string) (*websocket.Conn, bool) {
 ```
 
 ### 4. Context for Cancellation
+
 ```go
 ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 defer cancel()
@@ -500,6 +537,7 @@ case <-ctx.Done():
 ```
 
 ### 5. Structured Logging
+
 ```go
 logger := logger.New(logger.LevelInfo)
 logger.Info("Request received",
@@ -510,6 +548,7 @@ logger.Info("Request received",
 ```
 
 ### 6. Error Handling
+
 ```go
 if err := client.Connect(); err != nil {
     return fmt.Errorf("failed to connect: %w", err)
@@ -520,13 +559,13 @@ if err := client.Connect(); err != nil {
 
 Tested on AWS EC2 t3.medium (2 vCPU, 4GB RAM):
 
-| Metric | Value |
-|--------|-------|
-| Max concurrent clients | 1000+ |
-| Throughput per tunnel | ~500 req/s |
-| Latency overhead | ~50ms |
-| Memory per client | ~10MB |
-| CPU usage | <5% per 100 req/s |
+| Metric                 | Value             |
+| ---------------------- | ----------------- |
+| Max concurrent clients | 1000+             |
+| Throughput per tunnel  | ~500 req/s        |
+| Latency overhead       | ~50ms             |
+| Memory per client      | ~10MB             |
+| CPU usage              | <5% per 100 req/s |
 
 ## 🗺️ Roadmap & Future Enhancements
 
@@ -558,6 +597,7 @@ MIT License - see LICENSE file for details
 ## 🙏 Acknowledgments
 
 Inspired by:
+
 - [ngrok](https://ngrok.com) - The original tunneling service
 - [Cloudflare Tunnel](https://www.cloudflare.com/products/tunnel/)
 - [frp](https://github.com/fatedier/frp) - Fast Reverse Proxy

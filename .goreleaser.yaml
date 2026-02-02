@@ -1,0 +1,194 @@
+# GoReleaser configuration for GoTunnel
+# Documentation: https://goreleaser.com
+
+version: 2
+
+before:
+  hooks:
+    # Clean and verify dependencies
+    - go mod tidy
+    - go mod verify
+
+builds:
+  # Build tunnel-server binary
+  - id: tunnel-server
+    binary: tunnel-server
+    main: ./cmd/tunnel-server
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "7"
+    ignore:
+      # No ARM for Windows
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+  # Build tunnel-client binary
+  - id: tunnel-client
+    binary: tunnel-client
+    main: ./cmd/tunnel-client
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+      - arm
+    goarm:
+      - "7"
+    ignore:
+      # No ARM for Windows
+      - goos: windows
+        goarch: arm
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -s -w
+      - -X main.version={{.Version}}
+      - -X main.commit={{.Commit}}
+      - -X main.date={{.Date}}
+
+archives:
+  - id: default
+    format: tar.gz
+    name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
+    format_overrides:
+      - goos: windows
+        format: zip
+    files:
+      - README.md
+      - LICENSE
+      - DISTRIBUTION.md
+      - scripts/*
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  use: github
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "typo"
+      - Merge pull request
+      - Merge branch
+  groups:
+    - title: "🚀 Features"
+      regexp: '^.*?feat(\([[:word:]]+\))??!?:.+$'
+      order: 0
+    - title: "🐛 Bug Fixes"
+      regexp: '^.*?fix(\([[:word:]]+\))??!?:.+$'
+      order: 1
+    - title: "📝 Documentation"
+      regexp: '^.*?docs(\([[:word:]]+\))??!?:.+$'
+      order: 2
+    - title: "⚡ Performance"
+      regexp: '^.*?perf(\([[:word:]]+\))??!?:.+$'
+      order: 3
+    - title: "Other"
+      order: 999
+
+release:
+  github:
+    owner: navpreet032 # TODO: Replace with your GitHub username
+    name: goTunnel
+  draft: false
+  prerelease: auto
+  mode: replace
+  header: |
+    ## GoTunnel {{ .Tag }} Release
+
+    A lightweight, production-ready tunnel service written in Go.
+
+    ### Installation
+
+    **Using go install:**
+    ```bash
+    go install github.com/navpreet032/goTunnel/cmd/...@{{ .Tag }}
+    ```
+
+    **Download binaries:**
+    Choose the appropriate binary for your platform from the assets below.
+
+  footer: |
+    ---
+
+    **Full Changelog**: https://github.com/navpreet032/goTunnel/compare/{{ .PreviousTag }}...{{ .Tag }}
+
+    ### Getting Started
+
+    ```bash
+    # Start server (on your VPS)
+    tunnel-server --port 8080 --domain tunnel.example.com
+
+    # Start client (on your local machine)
+    tunnel-client --local-port 3000
+    ```
+
+    For more details, see the [README](https://github.com/navpreet032/goTunnel#readme).
+
+# Announce releases (optional integrations)
+# announce:
+#   twitter:
+#     enabled: true
+#     message_template: '🚀 GoTunnel {{ .Tag }} is out! Check it out at {{ .ReleaseURL }}'
+#   discord:
+#     enabled: true
+#     message_template: 'GoTunnel {{ .Tag }} released! Download: {{ .ReleaseURL }}'
+
+# Homebrew tap (optional - for macOS users)
+# brews:
+#   - repository:
+#       owner: navpreet032
+#       name: homebrew-tap
+#     homepage: https://github.com/navpreet032/goTunnel
+#     description: A lightweight tunnel service written in Go
+#     license: MIT
+#     install: |
+#       bin.install "tunnel-server"
+#       bin.install "tunnel-client"
+
+# Docker images (optional)
+# dockers:
+#   - image_templates:
+#       - "ghcr.io/navpreet032/goTunnel-server:{{ .Tag }}"
+#       - "ghcr.io/navpreet032/goTunnel-server:latest"
+#     dockerfile: Dockerfile.server
+#     build_flag_templates:
+#       - "--pull"
+#       - "--label=org.opencontainers.image.created={{.Date}}"
+#       - "--label=org.opencontainers.image.title={{.ProjectName}}"
+#       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+#       - "--label=org.opencontainers.image.version={{.Version}}"

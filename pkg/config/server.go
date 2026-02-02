@@ -3,7 +3,7 @@ package config
 import (
 	"flag"
 
-	"goTunnel/pkg/logger"
+	"github.com/navpreet032/goTunnel/pkg/logger"
 )
 
 // ServerConfig holds all configuration for the tunnel server

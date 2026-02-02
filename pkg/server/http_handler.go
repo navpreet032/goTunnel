@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"goTunnel/pkg/protocol"
-	"goTunnel/pkg/registry"
+	"github.com/navpreet032/goTunnel/pkg/protocol"
+	"github.com/navpreet032/goTunnel/pkg/registry"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
