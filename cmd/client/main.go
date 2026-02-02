@@ -34,6 +34,9 @@ type Client struct {
 
 	// conn is the WebSocket connection to the server
 	conn *websocket.Conn
+
+	// heartbeatStop is used to signal the heartbeat goroutine to stop
+	heartbeatStop chan struct{}
 }
 
 // NewClient creates a new tunnel client instance
@@ -221,11 +224,17 @@ func (c *Client) handleHTTPRequest(msg *protocol.Message) {
 	log.Printf("[INFO] ==========================================")
 }
 
-// Close closes the connection to the server
+// Close closes the connection to the server and stops the heartbeat
 func (c *Client) Close() error {
+	// Stop heartbeat first
+	c.stopHeartbeat()
+
+	// Then close the connection
 	if c.conn != nil {
 		log.Printf("[INFO] Closing connection to server...")
-		return c.conn.Close()
+		err := c.conn.Close()
+		c.conn = nil
+		return err
 	}
 	return nil
 }
@@ -259,8 +268,11 @@ func (c *Client) sendErrorResponse(requestID, errorMsg string) {
 }
 
 // startHeartbeat starts a goroutine that sends periodic pings
-// This demonstrates Go's goroutines and time.Ticker
+// This demonstrates Go's goroutines and time.Ticker with proper cleanup
 func (c *Client) startHeartbeat() {
+	// Create stop channel for this heartbeat
+	c.heartbeatStop = make(chan struct{})
+
 	// Create a ticker that fires every 30 seconds
 	// This is a common Go pattern for periodic tasks
 	ticker := time.NewTicker(30 * time.Second)
@@ -270,64 +282,138 @@ func (c *Client) startHeartbeat() {
 	go func() {
 		defer ticker.Stop()
 
-		for range ticker.C {
-			// Send a ping message
-			ping := protocol.NewPingMessage()
-			if err := c.conn.WriteJSON(ping); err != nil {
-				log.Printf("[ERROR] Failed to send ping: %v", err)
+		for {
+			select {
+			case <-ticker.C:
+				// Send a ping message
+				ping := protocol.NewPingMessage()
+				if err := c.conn.WriteJSON(ping); err != nil {
+					log.Printf("[ERROR] Failed to send ping: %v", err)
+					return
+				}
+				log.Printf("[DEBUG] Sent ping")
+
+			case <-c.heartbeatStop:
+				// Stop signal received
+				log.Printf("[DEBUG] Heartbeat stopped")
 				return
 			}
-			log.Printf("[DEBUG] Sent ping")
 		}
 	}()
 
 	log.Printf("[INFO] Heartbeat started (30s interval)")
 }
 
+// stopHeartbeat stops the heartbeat goroutine
+func (c *Client) stopHeartbeat() {
+	if c.heartbeatStop != nil {
+		close(c.heartbeatStop)
+		c.heartbeatStop = nil
+	}
+}
+
 func main() {
 	// Parse command-line flags
 	serverURL := flag.String("server", "ws://localhost:8080/tunnel", "Tunnel server WebSocket URL")
 	localPort := flag.String("local-port", "3000", "Local port to forward requests to")
+	maxReconnectDelay := flag.Int("max-reconnect-delay", 60, "Maximum reconnect delay in seconds")
 	flag.Parse()
 
 	// Create client instance
 	client := NewClient(*serverURL, *localPort)
-
-	// Connect to server
-	if err := client.Connect(); err != nil {
-		log.Fatalf("[FATAL] Failed to connect: %v", err)
-	}
-	defer client.Close()
-
-	// Register with server
-	if err := client.Register(); err != nil {
-		log.Fatalf("[FATAL] Failed to register: %v", err)
-	}
-
-	// Start heartbeat
-	client.startHeartbeat()
 
 	// Set up graceful shutdown
 	// This demonstrates Go's signal handling for clean exits
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 
-	// Run client in a goroutine so we can handle shutdown signals
-	errChan := make(chan error, 1)
-	go func() {
-		errChan <- client.Run()
-	}()
+	// Reconnection loop with exponential backoff
+	// This demonstrates Go's error recovery and retry patterns
+	reconnectDelay := 1 * time.Second
+	maxDelay := time.Duration(*maxReconnectDelay) * time.Second
+	attemptCount := 0
 
-	// Wait for either an error or a shutdown signal
-	// This demonstrates Go's select statement for waiting on multiple channels
-	select {
-	case err := <-errChan:
-		if err != nil {
-			log.Printf("[ERROR] Client error: %v", err)
+	for {
+		attemptCount++
+
+		// Try to connect and register
+		if err := client.Connect(); err != nil {
+			log.Printf("[ERROR] Connection failed (attempt %d): %v", attemptCount, err)
+
+			// Check if we received a shutdown signal
+			select {
+			case <-sigChan:
+				log.Printf("[INFO] Shutdown signal received during reconnect")
+				return
+			case <-time.After(reconnectDelay):
+				// Exponential backoff: double the delay each time, up to max
+				reconnectDelay *= 2
+				if reconnectDelay > maxDelay {
+					reconnectDelay = maxDelay
+				}
+				log.Printf("[INFO] Retrying connection in %v...", reconnectDelay)
+				continue
+			}
 		}
-	case <-sigChan:
-		log.Printf("[INFO] Shutdown signal received")
-	}
 
-	log.Printf("[INFO] Client shutting down...")
+		// Successfully connected, now register
+		if err := client.Register(); err != nil {
+			log.Printf("[ERROR] Registration failed (attempt %d): %v", attemptCount, err)
+			client.Close()
+
+			// Check for shutdown signal
+			select {
+			case <-sigChan:
+				log.Printf("[INFO] Shutdown signal received during registration")
+				return
+			case <-time.After(reconnectDelay):
+				reconnectDelay *= 2
+				if reconnectDelay > maxDelay {
+					reconnectDelay = maxDelay
+				}
+				log.Printf("[INFO] Retrying registration in %v...", reconnectDelay)
+				continue
+			}
+		}
+
+		// Reset reconnect delay after successful connection
+		reconnectDelay = 1 * time.Second
+		attemptCount = 0
+		log.Printf("[INFO] Successfully connected and registered")
+
+		// Start heartbeat
+		client.startHeartbeat()
+
+		// Run client in a goroutine so we can handle shutdown signals
+		errChan := make(chan error, 1)
+		go func() {
+			errChan <- client.Run()
+		}()
+
+		// Wait for either an error or a shutdown signal
+		// This demonstrates Go's select statement for waiting on multiple channels
+		select {
+		case err := <-errChan:
+			if err != nil {
+				log.Printf("[ERROR] Client disconnected: %v", err)
+				client.Close()
+
+				// Check if it's a shutdown signal or a real error
+				select {
+				case <-sigChan:
+					log.Printf("[INFO] Shutdown signal received")
+					return
+				default:
+					// Connection lost, will retry
+					log.Printf("[WARN] Connection lost, attempting to reconnect...")
+					time.Sleep(reconnectDelay)
+					continue
+				}
+			}
+		case <-sigChan:
+			log.Printf("[INFO] Shutdown signal received")
+			client.Close()
+			return
+		}
+	}
 }
