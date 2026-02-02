@@ -155,11 +155,20 @@ func (s *Server) handleRegister(conn *websocket.Conn, msg *protocol.Message) str
 		return ""
 	}
 
-	// Create the tunnel URL
-	tunnelURL := fmt.Sprintf("http://%s:%s", clientID, s.port)
-	if s.domain != "" {
-		tunnelURL = fmt.Sprintf("http://%s.%s", clientID, s.domain)
+	// Create the tunnel URL with path-based routing
+	// Format: http://SERVER:PORT/client-id/ or https://DOMAIN/client-id/
+	host := s.domain
+	if host == "" {
+		host = fmt.Sprintf("localhost:%s", s.port)
 	}
+
+	// Determine scheme (https if domain is set, otherwise http)
+	scheme := "http"
+	if s.domain != "" {
+		scheme = "https"
+	}
+
+	tunnelURL := fmt.Sprintf("%s://%s/%s/", scheme, host, clientID)
 
 	// Send registration response back to client
 	response := protocol.RegistrationResponse{

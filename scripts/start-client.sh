@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # GoTunnel Client Start Script
-# Usage: ./scripts/start-client.sh <server-url> <local-port>
+# Usage: ./scripts/start-client.sh [local-port] [server-url]
 #
 # Examples:
-#   ./scripts/start-client.sh ws://localhost:8080/tunnel 3000
-#   ./scripts/start-client.sh ws://your-ec2.com:8080/tunnel 5173
+#   ./scripts/start-client.sh                    # Uses defaults (port 3000, production server)
+#   ./scripts/start-client.sh 8000               # Custom port, production server
+#   ./scripts/start-client.sh 3000 ws://localhost:8080/tunnel  # Local testing
 
 set -e
 
@@ -16,21 +17,13 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Check arguments
-if [ $# -lt 2 ]; then
-    echo -e "${RED}Error: Missing required arguments${NC}"
-    echo ""
-    echo "Usage: $0 <server-url> <local-port>"
-    echo ""
-    echo "Examples:"
-    echo "  $0 ws://localhost:8080/tunnel 3000"
-    echo "  $0 ws://your-ec2.com:8080/tunnel 5173"
-    echo ""
-    exit 1
-fi
+# Default values
+DEFAULT_SERVER="wss://easysource-mortalengine.hirequotient.com/tunnel"
+DEFAULT_PORT="3000"
 
-SERVER_URL="$1"
-LOCAL_PORT="$2"
+# Parse arguments
+LOCAL_PORT="${1:-$DEFAULT_PORT}"
+SERVER_URL="${2:-$DEFAULT_SERVER}"
 
 # Validate WebSocket URL
 if [[ ! "$SERVER_URL" =~ ^wss?:// ]]; then
@@ -40,7 +33,6 @@ if [[ ! "$SERVER_URL" =~ ^wss?:// ]]; then
     echo ""
     echo "Correct examples:"
     echo "  ws://localhost:8080/tunnel"
-    echo "  ws://54.123.45.67:8080/tunnel"
     echo "  wss://tunnel.example.com/tunnel"
     echo ""
     exit 1
@@ -54,6 +46,7 @@ echo ""
 # Check if binary exists
 if [ ! -f "bin/client" ]; then
     echo -e "${YELLOW}Client binary not found. Building...${NC}"
+    mkdir -p bin
     go build -o bin/client ./cmd/client
     echo -e "${GREEN}✓ Build complete${NC}"
     echo ""

@@ -28,6 +28,7 @@ echo ""
 # Check if binary exists
 if [ ! -f "bin/server" ]; then
     echo -e "${YELLOW}Server binary not found. Building...${NC}"
+    mkdir -p bin
     go build -o bin/server ./cmd/server
     echo -e "${GREEN}✓ Build complete${NC}"
     echo ""

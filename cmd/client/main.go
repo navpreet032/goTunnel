@@ -314,7 +314,8 @@ func (c *Client) stopHeartbeat() {
 
 func main() {
 	// Parse command-line flags
-	serverURL := flag.String("server", "ws://localhost:8080/tunnel", "Tunnel server WebSocket URL")
+	// Default to your production EC2 server - makes it work out of the box!
+	serverURL := flag.String("server", "wss://easysource-mortalengine.hirequotient.com/tunnel", "Tunnel server WebSocket URL")
 	localPort := flag.String("local-port", "3000", "Local port to forward requests to")
 	maxReconnectDelay := flag.Int("max-reconnect-delay", 60, "Maximum reconnect delay in seconds")
 	flag.Parse()

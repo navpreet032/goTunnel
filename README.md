@@ -8,7 +8,7 @@ A lightweight, production-ready tunnel service written in Go that exposes localh
 ## ✨ Features
 
 - 🔌 **WebSocket-based tunneling** - Efficient bidirectional communication
-- 🌐 **HTTP/HTTPS proxying** - Forward any HTTP traffic to local applications
+- 🌐 **HTTP/HTTPS proxying** - Forward any HTTP traffic to local applications with path-based routing
 - 🔄 **Auto-reconnect** - Clients automatically reconnect with exponential backoff
 - 🎯 **Multiple clients** - Support hundreds of concurrent tunnel connections
 - 📊 **Structured logging** - Production-ready logging with `log/slog`
@@ -104,84 +104,126 @@ go mod download
 # Build binaries
 go build -o tunnel-server ./cmd/server
 go build -o tunnel-client ./cmd/client
+
+# Or use the convenience scripts (auto-builds if needed)
+chmod +x scripts/*.sh
+./scripts/start-client.sh          # Runs with defaults
+./scripts/start-client.sh 8000     # Custom port
 ```
 
 ## 🚀 Quick Start
 
-### 1. Start the Server
+### 1. Start Your Local Application
 
-On your public server (EC2, VPS):
-
-```bash
-./tunnel-server --port 8080 --log-level info
-```
-
-Output:
-```
-[INFO] ==========================================
-[INFO] Tunnel server starting on :8080
-[INFO] Tunnel endpoint: ws://localhost:8080/tunnel
-[INFO] HTTP proxy endpoint: http://localhost:8080/<client-id>/
-[INFO] Ready to accept connections
-[INFO] ==========================================
-```
-
-### 2. Start Your Local Application
+First, start the application you want to expose:
 
 ```bash
 # Example: Python HTTP server
 python3 -m http.server 3000
 
 # Or your actual app
-npm run dev  # React/Next.js
-rails server # Ruby on Rails
-./my-api     # Go API
+npm run dev  # React/Next.js (usually port 3000)
+rails server # Ruby on Rails (port 3000)
+./my-api     # Your API server
 ```
 
-### 3. Start the Client
+### 2. Start the Tunnel Client
 
-On your local machine:
+**That's it!** Just run the client (defaults to production server):
 
 ```bash
-./tunnel-client --server ws://YOUR-SERVER-IP:8080/tunnel --local-port 3000
+# Uses production server automatically
+./tunnel-client
+
+# Or specify a different port
+./tunnel-client --local-port 8000
 ```
 
 Output:
 ```
+[INFO] Connecting to tunnel server at wss://easysource-mortalengine.hirequotient.com/tunnel...
+[INFO] Connected successfully!
 [INFO] ==========================================
 [INFO] Registration successful!
 [INFO] Client ID: client-x7k2m9p4
-[INFO] Your tunnel URL: http://client-x7k2m9p4:8080
+[INFO] Your tunnel URL: https://easysource-mortalengine.hirequotient.com/client-x7k2m9p4/
 [INFO] Forwarding to: http://localhost:3000
 [INFO] ==========================================
 ```
 
-### 4. Access from Anywhere!
+### 3. Access from Anywhere!
+
+Your local app is now **live on the internet**:
 
 ```bash
-curl http://YOUR-SERVER-IP:8080/client-x7k2m9p4/
+# Share this URL with anyone
+curl https://easysource-mortalengine.hirequotient.com/client-x7k2m9p4/
+
+# Or open in browser
+open https://easysource-mortalengine.hirequotient.com/client-x7k2m9p4/
 ```
 
-Your local application is now accessible from the internet! 🎉
+🎉 **That's it!** Your localhost is now publicly accessible!
+
+### Local Testing (Optional)
+
+If you're running your own server locally for development:
+
+```bash
+# Terminal 1: Start local server
+./tunnel-server --port 8080
+
+# Terminal 2: Connect client to local server
+./tunnel-client --server ws://localhost:8080/tunnel --local-port 3000
+```
 
 ## ⚙️ Configuration
+
+### Understanding Tunnel URLs
+
+GoTunnel uses **path-based routing** for tunnel URLs:
+
+**Format:** `https://YOUR-DOMAIN/client-ID/path`
+
+**Examples:**
+```bash
+# Production server
+https://easysource-mortalengine.hirequotient.com/client-abc123/
+https://easysource-mortalengine.hirequotient.com/client-abc123/api/users
+
+# Local testing
+http://localhost:8080/client-abc123/
+http://localhost:8080/client-abc123/api/users
+```
+
+The server automatically:
+- Uses `https://` when `--domain` is set (production)
+- Uses `http://localhost:PORT` when no domain is set (local testing)
+- Appends the client ID as a path segment
 
 ### Server Options
 
 | CLI Flag | Env Variable | Default | Description |
 |----------|--------------|---------|-------------|
 | `--port` | `SERVER_PORT` | `8080` | Server listen port |
-| `--domain` | `TUNNEL_DOMAIN` | `` | Custom domain (e.g., `tunnel.com`) |
+| `--domain` | `TUNNEL_DOMAIN` | `` | Public server address for tunnel URLs (e.g., `tunnel.example.com` or `1.2.3.4:8080`) |
 | `--request-timeout` | `REQUEST_TIMEOUT` | `5` | Client response timeout (seconds) |
 | `--log-level` | `LOG_LEVEL` | `info` | Logging level (debug/info/warn/error) |
 
 **Example:**
 ```bash
-# Using flags
-./tunnel-server --port 443 --domain tunnel.example.com --log-level debug
+# Local testing (no domain, uses localhost:8080 in URLs)
+./tunnel-server --port 8080
+
+# Production with domain (generates https://tunnel.example.com/client-xxx/ URLs)
+./tunnel-server --port 8080 --domain tunnel.example.com
+
+# Production with IP address (generates https://1.2.3.4:443/client-xxx/ URLs)
+./tunnel-server --port 443 --domain 1.2.3.4:443 --log-level debug
 
 # Using environment variables
 export SERVER_PORT=8080
+export TUNNEL_DOMAIN=tunnel.example.com
 export LOG_LEVEL=info
 ./tunnel-server
 ```
@@ -190,22 +232,24 @@ export LOG_LEVEL=info
 
 | CLI Flag | Env Variable | Default | Description |
 |----------|--------------|---------|-------------|
-| `--server` | `TUNNEL_SERVER` | `ws://localhost:8080/tunnel` | Server WebSocket URL |
+| `--server` | `TUNNEL_SERVER` | `wss://easysource-mortalengine.hirequotient.com/tunnel` | Server WebSocket URL |
 | `--local-port` | `LOCAL_PORT` | `3000` | Local port to forward to |
 | `--max-reconnect-delay` | `MAX_RECONNECT_DELAY` | `60` | Max reconnect delay (seconds) |
 | `--log-level` | `LOG_LEVEL` | `info` | Logging level (debug/info/warn/error) |
 
 **Example:**
 ```bash
-# Using flags
-./tunnel-client \
-  --server ws://tunnel.example.com:8080/tunnel \
-  --local-port 8000 \
-  --max-reconnect-delay 120 \
-  --log-level debug
+# Simplest - uses all defaults (production server, port 3000)
+./tunnel-client
+
+# Custom port only
+./tunnel-client --local-port 8000
+
+# Local testing with local server
+./tunnel-client --server ws://localhost:8080/tunnel --local-port 3000
 
 # Using environment variables
-export TUNNEL_SERVER="ws://tunnel.example.com:8080/tunnel"
+export TUNNEL_SERVER="wss://easysource-mortalengine.hirequotient.com/tunnel"
 export LOCAL_PORT=8000
 export LOG_LEVEL=debug
 ./tunnel-client
@@ -256,20 +300,20 @@ goTunnel/
 Run multiple clients for different local apps:
 
 ```bash
-# Terminal 1: React app
-LOCAL_PORT=3000 ./tunnel-client
+# Terminal 1: React app (port 3000)
+./tunnel-client
 
-# Terminal 2: API server
-LOCAL_PORT=8000 ./tunnel-client
+# Terminal 2: API server (port 8000)
+./tunnel-client --local-port 8000
 
-# Terminal 3: Database UI
-LOCAL_PORT=5050 ./tunnel-client
+# Terminal 3: Database UI (port 5050)
+./tunnel-client --local-port 5050
 ```
 
-Each gets a unique tunnel URL:
-- `http://server:8080/client-abc123/` → localhost:3000 (React)
-- `http://server:8080/client-def456/` → localhost:8000 (API)
-- `http://server:8080/client-ghi789/` → localhost:5050 (DB UI)
+Each gets a unique tunnel URL on the production server:
+- `https://easysource-mortalengine.hirequotient.com/client-abc123/` → localhost:3000 (React)
+- `https://easysource-mortalengine.hirequotient.com/client-def456/` → localhost:8000 (API)
+- `https://easysource-mortalengine.hirequotient.com/client-ghi789/` → localhost:5050 (DB UI)
 
 ### Production Deployment with SSL
 
@@ -489,7 +533,7 @@ Tested on AWS EC2 t3.medium (2 vCPU, 4GB RAM):
 Potential improvements:
 
 - [ ] **TCP Tunneling** - Support raw TCP (SSH, databases, etc.)
-- [ ] **Custom Subdomains** - Let clients request specific names
+- [ ] **Custom Client IDs** - Let clients request specific tunnel path names
 - [ ] **Authentication** - Token-based client authentication
 - [ ] **Web Dashboard** - Real-time monitoring UI
 - [ ] **Metrics** - Prometheus metrics export

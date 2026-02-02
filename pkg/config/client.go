@@ -30,7 +30,8 @@ func LoadClientConfig() *ClientConfig {
 	cfg := &ClientConfig{}
 
 	// Define flags
-	serverURL := flag.String("server", getEnv("TUNNEL_SERVER", "ws://localhost:8080/tunnel"), "Tunnel server WebSocket URL (env: TUNNEL_SERVER)")
+	// Default to production EC2 server for out-of-the-box functionality
+	serverURL := flag.String("server", getEnv("TUNNEL_SERVER", "wss://easysource-mortalengine.hirequotient.com/tunnel"), "Tunnel server WebSocket URL (env: TUNNEL_SERVER)")
 	localPort := flag.String("local-port", getEnv("LOCAL_PORT", "3000"), "Local port to forward requests to (env: LOCAL_PORT)")
 	maxReconnectDelay := flag.Int("max-reconnect-delay", getEnvInt("MAX_RECONNECT_DELAY", 60), "Maximum reconnect delay in seconds (env: MAX_RECONNECT_DELAY)")
 	logLevel := flag.String("log-level", getEnv("LOG_LEVEL", "info"), "Log level: debug, info, warn, error (env: LOG_LEVEL)")
