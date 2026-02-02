@@ -146,14 +146,30 @@ release:
 
     **Full Changelog**: https://github.com/navpreet032/goTunnel/compare/{{ .PreviousTag }}...{{ .Tag }}
 
-    ### Getting Started
+    ### Quick Install as Service (Linux)
+
+    ```bash
+    # 1. Download and extract (example for Linux x86_64)
+    wget https://github.com/navpreet032/goTunnel/releases/download/{{ .Tag }}/goTunnel_{{ .Version }}_Linux_x86_64.tar.gz
+    tar -xzf goTunnel_{{ .Version }}_Linux_x86_64.tar.gz
+    cd goTunnel_{{ .Version }}_Linux_x86_64
+
+    # 2. Install as systemd service (auto-start on boot, auto-restart on failure)
+    chmod +x scripts/install-from-release.sh
+    sudo ./scripts/install-from-release.sh
+
+    # Done! Service is running. Check status:
+    sudo systemctl status tunnel-server
+    ```
+
+    ### Manual Start
 
     ```bash
     # Start server (on your VPS)
-    tunnel-server --port 8080 --domain tunnel.example.com
+    ./tunnel-server --port 8080 --domain tunnel.example.com
 
     # Start client (on your local machine)
-    tunnel-client --local-port 3000
+    ./tunnel-client --local-port 3000
     ```
 
     For more details, see the [README](https://github.com/navpreet032/goTunnel#readme).
