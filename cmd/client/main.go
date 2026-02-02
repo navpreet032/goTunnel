@@ -101,7 +101,7 @@ func (c *Client) Register() error {
 	}
 
 	// Store our assigned details
-	c.clientID = "client-" + regResp.ClientID
+	c.clientID = regResp.ClientID
 	c.tunnelURL = regResp.TunnelURL
 
 	log.Printf("[INFO] ==========================================")

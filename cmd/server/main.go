@@ -209,7 +209,7 @@ func (s *Server) unregisterClient(clientID string) {
 }
 
 // generateClientID creates a unique client identifier
-// Phase 4: Using random alphanumeric strings for better uniqueness
+// Phase 4: Using random alphanumeric strings with 'client-' prefix for nginx compatibility
 func (s *Server) generateClientID() string {
 	// Character set for random ID generation
 	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -221,7 +221,8 @@ func (s *Server) generateClientID() string {
 		b[i] = charset[rand.Intn(len(charset))]
 	}
 
-	clientID := string(b)
+	// Prepend 'client-' for nginx regex compatibility
+	clientID := "client-" + string(b)
 
 	// Check if ID already exists (very unlikely but possible)
 	// If it does, recursively generate a new one
