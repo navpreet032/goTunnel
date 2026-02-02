@@ -27,7 +27,7 @@ fi
 # Check if tunnel-server binary exists
 if [ ! -f "bin/server" ]; then
     echo -e "${YELLOW}Binary not found. Building...${NC}"
-    go build -o bin/server ./cmd/server
+    go build -o bin/server ./cmd/tunnel-server
 fi
 
 # Install binary to /usr/local/bin
