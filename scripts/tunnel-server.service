@@ -1,0 +1,27 @@
+[Unit]
+Description=GoTunnel Server - HTTP Tunnel Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/home/ec2-user/goTunnel
+ExecStart=/usr/local/bin/tunnel-server --port 8080 --domain easysource-mortalengine.hirequotient.com
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=tunnel-server
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Environment variables (optional)
+Environment="LOG_LEVEL=info"
+# Environment="REQUEST_TIMEOUT=10"
+
+[Install]
+WantedBy=multi-user.target
