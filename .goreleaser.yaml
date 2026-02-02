@@ -82,7 +82,6 @@ archives:
         format: zip
     files:
       - README.md
-      - LICENSE
       - DISTRIBUTION.md
       - scripts/*
 
