@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 
 	"goTunnel/pkg/protocol"
@@ -208,12 +209,27 @@ func (s *Server) unregisterClient(clientID string) {
 }
 
 // generateClientID creates a unique client identifier
-// Simple implementation for Phase 2 - will be improved in Phase 4
+// Phase 4: Using random alphanumeric strings for better uniqueness
 func (s *Server) generateClientID() string {
-	count := s.registry.Count()
-	// For now, just use a counter
-	// In Phase 4, we'll use proper random IDs
-	return fmt.Sprintf("client-%d", count+1)
+	// Character set for random ID generation
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+	const idLength = 8
+
+	// Generate random 8-character ID
+	b := make([]byte, idLength)
+	for i := range b {
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+
+	clientID := string(b)
+
+	// Check if ID already exists (very unlikely but possible)
+	// If it does, recursively generate a new one
+	if _, exists := s.registry.Get(clientID); exists {
+		return s.generateClientID()
+	}
+
+	return clientID
 }
 
 func main() {
