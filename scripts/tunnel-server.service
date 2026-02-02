@@ -7,7 +7,6 @@ Wants=network-online.target
 Type=simple
 User=ec2-user
 Group=ec2-user
-WorkingDirectory=/home/ec2-user/goTunnel
 ExecStart=/usr/local/bin/tunnel-server --port 8080 --domain easysource-mortalengine.hirequotient.com
 Restart=always
 RestartSec=10
