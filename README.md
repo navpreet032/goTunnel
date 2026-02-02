@@ -12,7 +12,9 @@ Internet User → Server (EC2) → WebSocket Tunnel → Client → localhost:POR
 ## Features
 
 - ✅ WebSocket-based tunneling for HTTP requests
-- ✅ Client registration with unique IDs
+- ✅ Random unique client IDs (8-character alphanumeric)
+- ✅ Multiple simultaneous clients support
+- ✅ Smart routing based on client ID
 - ✅ Bidirectional HTTP request/response forwarding
 - ✅ Error handling (502 for local server down, 404 for missing clients)
 - ✅ Keep-alive ping/pong mechanism
@@ -177,8 +179,8 @@ You should see the directory listing from your local Python server!
 - ✅ **Phase 1**: Foundation - WebSocket connections
 - ✅ **Phase 2**: HTTP Tunneling - Server to Client
 - ✅ **Phase 3**: Local Forwarding - Client to Localhost
-- 🚧 **Phase 4**: Multiple Clients & Routing (Next)
-- 📋 **Phase 5**: Reliability & Error Handling
+- ✅ **Phase 4**: Multiple Clients & Routing
+- 📋 **Phase 5**: Reliability & Error Handling (Next)
 - 📋 **Phase 6**: Polish & Documentation
 
 ## Troubleshooting
