@@ -32,6 +32,20 @@ fi
 SERVER_URL="$1"
 LOCAL_PORT="$2"
 
+# Validate WebSocket URL
+if [[ ! "$SERVER_URL" =~ ^wss?:// ]]; then
+    echo -e "${RED}Error: Server URL must start with 'ws://' or 'wss://'${NC}"
+    echo ""
+    echo "You provided: $SERVER_URL"
+    echo ""
+    echo "Correct examples:"
+    echo "  ws://localhost:8080/tunnel"
+    echo "  ws://54.123.45.67:8080/tunnel"
+    echo "  wss://tunnel.example.com/tunnel"
+    echo ""
+    exit 1
+fi
+
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}    GoTunnel Client Start Script${NC}"
 echo -e "${BLUE}========================================${NC}"
